@@ -6,8 +6,11 @@ import Sortable from 'sortablejs'
 import html2canvas from 'html2canvas'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
+import { useSettingsStore } from '../stores/settingsStore'
+
 const memberStore = useMemberStore()
 const teamStore = useTeamStore()
+const settingsStore = useSettingsStore()
 
 const pendingArea = ref<HTMLElement | null>(null)
 const squadAreas = ref<HTMLElement[]>([])
@@ -192,7 +195,8 @@ const clearLayout = () => {
             <div class="text-orange-500">近期伤害数据: (暂无数据)</div>
           </template>
           <div 
-            class="p-2 bg-white rounded cursor-move hover:bg-gray-50 transition border border-gray-200 shadow-sm hover:border-blue-400"
+            class="p-2 rounded-lg cursor-move hover:opacity-80 transition border border-gray-200 shadow-sm hover:border-blue-400"
+            :style="{ backgroundColor: settingsStore.getJobColor(member.job) }"
             draggable="true"
             @dragstart="onDragStart(member, { type: 'pending' })"
           >
@@ -241,13 +245,14 @@ const clearLayout = () => {
                   <el-button size="small" link type="danger" @click="removeSquad(tIdx, sIdx)">删除</el-button>
                 </div>
               </div>
-              <div class="space-y-2 squad-container h-[150px]">
+              <div class="space-y-2 squad-container min-h-[150px] transition-all">
                 <div 
                   v-for="(member, mIdx) in squad.members" 
                   :key="member.id"
                   draggable="true"
                   @dragstart="onDragStart(member, { type: 'squad', teamIdx: tIdx, squadIdx: sIdx, memberIdx: mIdx })"
-                  class="p-2 rounded-lg bg-white border border-gray-200 shadow-sm cursor-move text-sm flex justify-between items-center hover:border-blue-400 transition"
+                  class="p-2 rounded-lg border border-gray-200 shadow-sm cursor-move text-sm flex justify-between items-center hover:opacity-80 hover:border-blue-400 transition"
+                  :style="{ backgroundColor: settingsStore.getJobColor(member.job) }"
                   :class="{'opacity-50 line-through': member.is_leave}"
                 >
                   <div>

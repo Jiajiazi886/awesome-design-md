@@ -35,6 +35,10 @@
           <el-icon><MagicStick /></el-icon>
           <span>内功计算</span>
         </el-menu-item>
+        <el-menu-item index="/settings" class="menu-item">
+          <el-icon><Setting /></el-icon>
+          <span>职业颜色</span>
+        </el-menu-item>
       </el-menu>
     </el-aside>
     
@@ -53,7 +57,7 @@
 </template>
 
 <script setup lang="ts">
-import { DataBoard, User, Grid, PieChart, MagicStick } from '@element-plus/icons-vue'
+import { DataBoard, User, Grid, PieChart, MagicStick, Setting } from '@element-plus/icons-vue'
 </script>
 
 <style>

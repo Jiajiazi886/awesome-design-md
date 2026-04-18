@@ -6,7 +6,8 @@ const routes = [
   { path: '/members', component: () => import('../pages/MemberList.vue') },
   { path: '/team-builder', component: () => import('../pages/TeamBuilder.vue') },
   { path: '/analysis', component: () => import('../pages/DataAnalysis.vue') },
-  { path: '/skills', component: () => import('../pages/SkillCalc.vue') }
+  { path: '/skills', component: () => import('../pages/SkillCalc.vue') },
+  { path: '/settings', component: () => import('../pages/Settings.vue') }
 ]
 
 const router = createRouter({
