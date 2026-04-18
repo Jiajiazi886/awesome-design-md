@@ -94,8 +94,13 @@ const addVirtualSub = (teamIndex: number, squadIndex: number) => {
   })
 }
 
-const toggleLeave = (member: TeamMember) => {
-  member.is_leave = !member.is_leave
+const addVirtualLeave = (teamIndex: number, squadIndex: number) => {
+  teamStore.teams[teamIndex].squads[squadIndex].members.push({
+    id: 'v_leave_' + Date.now(),
+    game_id: '请假空位',
+    job: '请假',
+    is_leave: true
+  })
 }
 
 // Drag & Drop Handlers (Native HTML5 API is easier to integrate with Vue array state than raw SortableJS)
@@ -242,6 +247,7 @@ const clearLayout = () => {
                 <input v-model="squad.name" class="bg-transparent font-bold text-sm outline-none text-gray-800" />
                 <div class="flex gap-1">
                   <el-button size="small" link type="success" @click="addVirtualSub(tIdx, sIdx)">+替补</el-button>
+                  <el-button size="small" link type="warning" @click="addVirtualLeave(tIdx, sIdx)">+请假</el-button>
                   <el-button size="small" link type="danger" @click="removeSquad(tIdx, sIdx)">删除</el-button>
                 </div>
               </div>
@@ -259,7 +265,6 @@ const clearLayout = () => {
                     <span class="font-bold text-gray-800">{{ member.game_id }}</span>
                     <span class="text-xs text-gray-500 ml-2">{{ member.job }}</span>
                   </div>
-                  <el-button size="small" link type="warning" @click="toggleLeave(member)">假</el-button>
                 </div>
                 <div v-if="squad.members.length === 0" class="text-center text-gray-400 text-sm mt-4">
                   拖拽至此处 (0/6)
