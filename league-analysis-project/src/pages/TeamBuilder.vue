@@ -141,6 +141,20 @@ const onDrop = (teamIdx: number, squadIdx: number) => {
   sourceInfo.value = null
 }
 
+const onDropToLeave = () => {
+  if (!draggedItem.value) return
+  
+  // 无论是从左侧待选区，还是右侧小队拖过来的，都把它加进请假列表
+  if (sourceInfo.value?.type === 'squad') {
+    const { teamIdx: sT, squadIdx: sS, memberIdx: sM } = sourceInfo.value
+    teamStore.teams[sT!].squads[sS!].members.splice(sM!, 1)
+  }
+  
+  markLeave(draggedItem.value)
+  draggedItem.value = null
+  sourceInfo.value = null
+}
+
 const onDropRemove = () => {
   if (!draggedItem.value || sourceInfo.value?.type !== 'squad') return
   const { teamIdx: sT, squadIdx: sS, memberIdx: sM } = sourceInfo.value
@@ -152,8 +166,18 @@ const onDropRemove = () => {
 const captureArea = ref<HTMLElement | null>(null)
 const exportImage = async () => {
   if (!captureArea.value) return
+  
+  // 修复 html2canvas 滚动截断问题：先滚动到顶部
+  const prevScrollTop = captureArea.value.scrollTop
+  captureArea.value.scrollTop = 0
+  
   try {
-    const canvas = await html2canvas(captureArea.value, { backgroundColor: '#f9fafb' })
+    const canvas = await html2canvas(captureArea.value, { 
+      backgroundColor: '#f9fafb',
+      scale: 2, // 提高清晰度
+      useCORS: true,
+      scrollY: -window.scrollY // 处理全局滚动偏移
+    })
     const url = canvas.toDataURL('image/png')
     const a = document.createElement('a')
     a.href = url
@@ -161,6 +185,9 @@ const exportImage = async () => {
     a.click()
   } catch (e) {
     ElMessage.error('导出失败')
+  } finally {
+    // 恢复滚动条位置
+    captureArea.value.scrollTop = prevScrollTop
   }
 }
 
@@ -253,14 +280,21 @@ const clearLayout = () => {
             </div>
           </div>
           
-          <div class="bg-orange-50 border border-orange-100 p-3 rounded-lg flex-1 md:max-w-md">
-            <div class="font-medium text-orange-800 text-sm mb-1">请假人员 ({{ leaveMembers.size }}人)</div>
-            <div class="text-xs text-orange-600 flex flex-wrap gap-2">
-              <span v-if="leaveMembers.size === 0" class="text-gray-400">暂无请假人员</span>
+          <div 
+            class="bg-orange-50 border border-orange-100 p-3 rounded-lg flex-1 md:max-w-md min-h-[80px]"
+            @dragover.prevent
+            @drop="onDropToLeave"
+          >
+            <div class="font-medium text-orange-800 text-sm mb-1 flex justify-between items-center">
+              <span>请假人员 ({{ leaveMembers.size }}人)</span>
+              <span class="text-xs text-orange-500 font-normal">拖拽成员到此处以请假</span>
+            </div>
+            <div class="text-xs text-orange-600 flex flex-wrap gap-2 mt-2">
+              <span v-if="leaveMembers.size === 0" class="text-orange-300">暂无请假人员</span>
               <span 
                 v-for="leaveId in Array.from(leaveMembers)" 
                 :key="leaveId"
-                class="bg-orange-100 px-2 py-0.5 rounded-full cursor-pointer hover:bg-orange-200 transition"
+                class="bg-orange-100 px-2 py-1 rounded-full cursor-pointer hover:bg-orange-200 transition shadow-sm border border-orange-200"
                 @click="cancelLeave(leaveId)"
                 title="点击取消请假"
               >
