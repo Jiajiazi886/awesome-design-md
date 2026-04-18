@@ -109,6 +109,10 @@ const cancelLeave = (game_id: string) => {
   leaveMembers.value.delete(game_id)
 }
 
+const getMemberInfo = (game_id: string) => {
+  return memberStore.members.find(m => m.game_id === game_id)
+}
+
 // Drag & Drop Handlers (Native HTML5 API is easier to integrate with Vue array state than raw SortableJS)
 const draggedItem = ref<any>(null)
 const sourceInfo = ref<{type: string, teamIdx?: number, squadIdx?: number, memberIdx?: number} | null>(null)
@@ -281,25 +285,30 @@ const clearLayout = () => {
           </div>
           
           <div 
-            class="bg-orange-50 border border-orange-100 p-3 rounded-lg flex-1 md:max-w-md min-h-[80px]"
+            class="bg-transparent border border-gray-200 p-3 rounded-xl flex-1 md:max-w-xl min-h-[100px]"
             @dragover.prevent
             @drop="onDropToLeave"
           >
-            <div class="font-medium text-orange-800 text-sm mb-1 flex justify-between items-center">
+            <div class="font-bold text-gray-800 text-sm mb-3 flex justify-between items-center border-b border-gray-100 pb-2">
               <span>请假人员 ({{ leaveMembers.size }}人)</span>
-              <span class="text-xs text-orange-500 font-normal">拖拽成员到此处以请假</span>
+              <span class="text-xs text-gray-400 font-normal">拖拽成员到此处以请假</span>
             </div>
-            <div class="text-xs text-orange-600 flex flex-wrap gap-2 mt-2">
-              <span v-if="leaveMembers.size === 0" class="text-orange-300">暂无请假人员</span>
-              <span 
+            <div class="flex flex-wrap gap-2 mt-2">
+              <div v-if="leaveMembers.size === 0" class="text-gray-400 text-xs py-2 w-full text-center">暂无请假人员</div>
+              <div 
                 v-for="leaveId in Array.from(leaveMembers)" 
                 :key="leaveId"
-                class="bg-orange-100 px-2 py-1 rounded-full cursor-pointer hover:bg-orange-200 transition shadow-sm border border-orange-200"
+                class="group p-1.5 px-3 rounded-lg border border-gray-200 shadow-sm cursor-pointer hover:shadow-md transition-all flex items-center gap-2"
+                :style="{ backgroundColor: settingsStore.getJobColor(getMemberInfo(leaveId)?.job || '未知') }"
                 @click="cancelLeave(leaveId)"
                 title="点击取消请假"
               >
-                {{ leaveId }} &times;
-              </span>
+                <div class="flex items-center">
+                  <span class="font-bold text-gray-800 text-sm">{{ leaveId }}</span>
+                  <span class="text-xs text-gray-500 ml-1">{{ getMemberInfo(leaveId)?.job || '未知' }}</span>
+                </div>
+                <span class="text-red-500 opacity-0 group-hover:opacity-100 transition-opacity text-sm ml-1">&times;</span>
+              </div>
             </div>
           </div>
         </div>
@@ -322,11 +331,23 @@ const clearLayout = () => {
               @dragover.prevent
               @drop="onDrop(tIdx, sIdx)"
             >
-              <div class="flex justify-between items-center mb-2 border-b border-gray-200 pb-2">
-                <input v-model="squad.name" class="bg-transparent font-bold text-sm outline-none text-gray-800" />
-                <div class="flex gap-1">
-                  <el-button size="small" link type="success" @click="addVirtualSub(tIdx, sIdx)">+替补空位</el-button>
-                  <el-button size="small" link type="danger" @click="removeSquad(tIdx, sIdx)">删除小队</el-button>
+              <div class="flex justify-between items-center mb-3 border-b border-gray-200 pb-3">
+                <input v-model="squad.name" class="bg-transparent font-bold text-sm outline-none text-gray-800 flex-1 min-w-[80px]" />
+                <div class="flex items-center gap-2">
+                  <button 
+                    type="button" 
+                    class="text-xs font-medium text-blue-600 hover:text-blue-800 transition-colors"
+                    @click="addVirtualSub(tIdx, sIdx)"
+                  >
+                    +替补空位
+                  </button>
+                  <button 
+                    type="button" 
+                    class="text-xs font-medium text-red-500 hover:text-red-700 transition-colors ml-1"
+                    @click="removeSquad(tIdx, sIdx)"
+                  >
+                    删除小队
+                  </button>
                 </div>
               </div>
               <div class="space-y-2 squad-container min-h-[150px] transition-all">
@@ -337,7 +358,6 @@ const clearLayout = () => {
                   @dragstart="onDragStart(member, { type: 'squad', teamIdx: tIdx, squadIdx: sIdx, memberIdx: mIdx })"
                   class="group p-2 rounded-lg border border-gray-200 shadow-sm cursor-move text-sm flex justify-between items-center hover:opacity-80 hover:border-blue-400 transition"
                   :style="{ backgroundColor: settingsStore.getJobColor(member.job) }"
-                  :class="{'opacity-50 line-through': member.is_leave}"
                 >
                   <div class="flex items-center gap-2">
                     <div>

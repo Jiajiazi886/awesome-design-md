@@ -7,7 +7,6 @@ export interface TeamMember {
   game_id: string
   job: string
   is_sub?: boolean
-  is_leave?: boolean
   sub_members?: TeamMember[] // for the "替补" feature
 }
 
