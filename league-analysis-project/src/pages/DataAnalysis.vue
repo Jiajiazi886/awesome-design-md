@@ -57,26 +57,35 @@ const renderCharts = () => {
   
   lineChart.setOption({
     backgroundColor: 'transparent',
-    title: { text: '小队伤害波动趋势', textStyle: { color: '#a3a3a1' } },
+    title: { text: '小队伤害波动趋势', textStyle: { color: '#666' } },
     tooltip: { trigger: 'axis' },
-    xAxis: { type: 'category', data: ['小队1', '小队2', '小队3', '小队4', '小队5', '小队6'], axisLine: { lineStyle: { color: '#3f3f3c' } }, axisLabel: { color: '#a3a3a1' } },
-    yAxis: { type: 'value', splitLine: { lineStyle: { color: '#2a2a28' } }, axisLabel: { color: '#a3a3a1' } },
+    xAxis: { 
+      type: 'category', 
+      data: ['小队1', '小队2', '小队3', '小队4', '小队5', '小队6'], 
+      axisLine: { lineStyle: { color: '#E5E5EA' } }, 
+      axisLabel: { color: '#666' } 
+    },
+    yAxis: { 
+      type: 'value', 
+      splitLine: { lineStyle: { color: '#F2F2F7' } }, 
+      axisLabel: { color: '#666' } 
+    },
     series: [
       {
         data: [150, 230, 224, 218, 135, 147],
         type: 'line',
         smooth: true,
-        lineStyle: { color: '#d97757' },
-        itemStyle: { color: '#d97757' }
+        lineStyle: { color: '#FF2D55', width: 3 }, // Apple Health Pink
+        itemStyle: { color: '#FF2D55' }
       }
     ]
   })
   
   radarChart.setOption({
     backgroundColor: 'transparent',
-    title: { text: '多小队综合能力对比', textStyle: { color: '#a3a3a1' } },
+    title: { text: '多小队综合能力对比', textStyle: { color: '#666' } },
     tooltip: {},
-    legend: { data: ['小队1', '小队2'], textStyle: { color: '#a3a3a1' }, bottom: 0 },
+    legend: { data: ['小队1', '小队2'], textStyle: { color: '#666' }, bottom: 0 },
     radar: {
       indicator: [
         { name: '总伤害', max: 6500 },
@@ -85,9 +94,10 @@ const renderCharts = () => {
         { name: '击杀', max: 38000 },
         { name: '助攻', max: 52000 }
       ],
-      splitArea: { areaStyle: { color: ['#1c1c1a', '#2a2a28'] } },
-      axisLine: { lineStyle: { color: '#3f3f3c' } },
-      splitLine: { lineStyle: { color: '#3f3f3c' } }
+      splitArea: { areaStyle: { color: ['#FFFFFF', '#F2F2F7'] } },
+      axisLine: { lineStyle: { color: '#E5E5EA' } },
+      splitLine: { lineStyle: { color: '#E5E5EA' } },
+      axisName: { color: '#666' }
     },
     series: [
       {
@@ -97,16 +107,16 @@ const renderCharts = () => {
           {
             value: [4200, 3000, 20000, 35000, 50000],
             name: '小队1',
-            areaStyle: { color: 'rgba(217, 119, 87, 0.3)' },
-            lineStyle: { color: '#d97757' },
-            itemStyle: { color: '#d97757' }
+            areaStyle: { color: 'rgba(255, 45, 85, 0.2)' }, // #FF2D55
+            lineStyle: { color: '#FF2D55', width: 2 },
+            itemStyle: { color: '#FF2D55' }
           },
           {
             value: [5000, 14000, 28000, 26000, 42000],
             name: '小队2',
-            areaStyle: { color: 'rgba(106, 155, 204, 0.3)' },
-            lineStyle: { color: '#6a9bcc' },
-            itemStyle: { color: '#6a9bcc' }
+            areaStyle: { color: 'rgba(0, 122, 255, 0.2)' }, // #007AFF
+            lineStyle: { color: '#007AFF', width: 2 },
+            itemStyle: { color: '#007AFF' }
           }
         ]
       }
@@ -116,13 +126,13 @@ const renderCharts = () => {
 </script>
 
 <template>
-  <div class="h-full flex text-[#faf9f5]">
+  <div class="h-full flex text-gray-800 bg-[#F2F2F7]">
     <!-- 左侧数据概览区 -->
-    <div class="w-1/3 bg-[#1c1c1a] border-r border-[#2a2a28] p-6 flex flex-col gap-6">
-      <h2 class="text-2xl font-bold text-[#6a9bcc]">分析面板</h2>
+    <div class="w-1/3 bg-white border-r border-gray-200 p-6 flex flex-col gap-6 shadow-sm z-10">
+      <h2 class="text-2xl font-bold text-gray-900">分析面板</h2>
       
-      <div class="bg-[#141413] p-4 rounded-xl border border-[#3f3f3c]">
-        <h3 class="text-lg mb-2 font-bold">1. 上传比赛数据</h3>
+      <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+        <h3 class="text-lg mb-2 font-bold text-gray-800">1. 上传比赛数据</h3>
         <el-upload
           class="upload-demo"
           drag
@@ -131,15 +141,15 @@ const renderCharts = () => {
           :on-error="handleUploadError"
           accept=".csv"
         >
-          <el-icon class="el-icon--upload"><upload-filled /></el-icon>
-          <div class="el-upload__text text-[#a3a3a1]">
-            拖拽 CSV 文件到此处或 <em>点击上传</em>
+          <el-icon class="el-icon--upload text-gray-400"><upload-filled /></el-icon>
+          <div class="el-upload__text text-gray-500">
+            拖拽 CSV 文件到此处或 <em class="text-[#007AFF]">点击上传</em>
           </div>
         </el-upload>
       </div>
 
-      <div class="bg-[#141413] p-4 rounded-xl border border-[#3f3f3c]">
-        <h3 class="text-lg mb-2 font-bold">2. 选择关联团配</h3>
+      <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+        <h3 class="text-lg mb-2 font-bold text-gray-800">2. 选择关联团配</h3>
         <el-select v-model="selectedTeamId" placeholder="选择保存的团配" class="w-full">
           <el-option
             v-for="team in teams"
@@ -152,8 +162,8 @@ const renderCharts = () => {
 
       <el-button 
         type="primary" 
-        class="w-full mt-4" 
-        color="#788c5d"
+        class="w-full mt-4 rounded-xl shadow-sm font-medium" 
+        color="#007AFF"
         size="large"
         @click="analyzeData"
       >
@@ -162,49 +172,49 @@ const renderCharts = () => {
 
       <!-- 概览指标卡片 -->
       <div v-if="matchData" class="mt-4 space-y-4">
-        <h3 class="text-lg font-bold border-b border-[#3f3f3c] pb-2">本场核心指标</h3>
+        <h3 class="text-lg font-bold border-b border-gray-100 pb-2 text-gray-800">本场核心指标</h3>
         <div class="grid grid-cols-2 gap-4">
-          <div class="bg-[#2a2a28] p-4 rounded-lg text-center">
-            <div class="text-[#a3a3a1] text-sm">总输出</div>
-            <div class="text-2xl font-bold text-[#d97757]">1.2M</div>
+          <div class="bg-white rounded-2xl shadow-sm p-4 border-l-4 border-[#FF2D55] text-center hover:shadow-md transition-shadow">
+            <div class="text-gray-500 text-sm font-medium">总输出</div>
+            <div class="text-2xl font-bold text-gray-900 mt-1">1.2M</div>
           </div>
-          <div class="bg-[#2a2a28] p-4 rounded-lg text-center">
-            <div class="text-[#a3a3a1] text-sm">总承伤</div>
-            <div class="text-2xl font-bold text-[#6a9bcc]">850K</div>
+          <div class="bg-white rounded-2xl shadow-sm p-4 border-l-4 border-[#007AFF] text-center hover:shadow-md transition-shadow">
+            <div class="text-gray-500 text-sm font-medium">总承伤</div>
+            <div class="text-2xl font-bold text-gray-900 mt-1">850K</div>
           </div>
-          <div class="bg-[#2a2a28] p-4 rounded-lg text-center">
-            <div class="text-[#a3a3a1] text-sm">有效治疗</div>
-            <div class="text-2xl font-bold text-[#788c5d]">980K</div>
+          <div class="bg-white rounded-2xl shadow-sm p-4 border-l-4 border-[#34C759] text-center hover:shadow-md transition-shadow">
+            <div class="text-gray-500 text-sm font-medium">有效治疗</div>
+            <div class="text-2xl font-bold text-gray-900 mt-1">980K</div>
           </div>
-          <div class="bg-[#2a2a28] p-4 rounded-lg text-center">
-            <div class="text-[#a3a3a1] text-sm">击杀/死亡</div>
-            <div class="text-2xl font-bold text-[#faf9f5]">450/120</div>
+          <div class="bg-white rounded-2xl shadow-sm p-4 border-l-4 border-[#FF9500] text-center hover:shadow-md transition-shadow">
+            <div class="text-gray-500 text-sm font-medium">击杀/死亡</div>
+            <div class="text-2xl font-bold text-gray-900 mt-1">450/120</div>
           </div>
         </div>
       </div>
     </div>
 
     <!-- 右侧图表区 -->
-    <div class="flex-1 bg-[#141413] p-6 overflow-y-auto">
-      <h2 class="text-2xl font-bold text-[#d97757] mb-6">可视化分析</h2>
+    <div class="flex-1 bg-[#F2F2F7] p-6 overflow-y-auto">
+      <h2 class="text-2xl font-bold text-gray-900 mb-6">可视化分析</h2>
       
-      <div v-if="!matchData" class="h-full flex items-center justify-center text-[#a3a3a1]">
+      <div v-if="!matchData" class="h-full flex items-center justify-center text-gray-400 font-medium">
         请在左侧完成数据上传与团配选择
       </div>
       
       <div v-else class="space-y-8 pb-12">
-        <div class="bg-[#1c1c1a] p-4 rounded-xl border border-[#2a2a28] shadow-lg">
+        <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
           <div ref="lineChartRef" class="w-full h-[400px]"></div>
         </div>
         
-        <div class="bg-[#1c1c1a] p-4 rounded-xl border border-[#2a2a28] shadow-lg">
+        <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
           <div ref="radarChartRef" class="w-full h-[500px]"></div>
         </div>
         
         <!-- 团队切片滚动展示占位 -->
-        <div class="bg-[#1c1c1a] p-4 rounded-xl border border-[#2a2a28] shadow-lg min-h-[300px]">
-          <h3 class="text-lg font-bold text-[#a3a3a1] mb-4">团队切片滚动展示</h3>
-          <div class="flex items-center justify-center h-[200px] text-[#3f3f3c] border-2 border-dashed border-[#3f3f3c] rounded-lg">
+        <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 min-h-[300px]">
+          <h3 class="text-lg font-bold text-gray-800 mb-4">团队切片滚动展示</h3>
+          <div class="flex items-center justify-center h-[200px] text-gray-400 border-2 border-dashed border-gray-200 rounded-2xl bg-gray-50">
             向下滚动以展示各小队详细切片数据
           </div>
         </div>
@@ -215,17 +225,21 @@ const renderCharts = () => {
 
 <style scoped>
 :deep(.el-upload-dragger) {
-  background-color: transparent !important;
-  border-color: #3f3f3c !important;
+  background-color: #FAFAFA !important;
+  border-color: #E5E5EA !important;
+  border-radius: 12px !important;
+  transition: all 0.3s;
 }
 :deep(.el-upload-dragger:hover) {
-  border-color: #6a9bcc !important;
+  border-color: #007AFF !important;
+  background-color: #F0F8FF !important;
 }
 :deep(.el-input__wrapper) {
-  background-color: #2a2a28 !important;
-  box-shadow: 0 0 0 1px #3f3f3c inset !important;
+  background-color: #F2F2F7 !important;
+  box-shadow: none !important;
+  border-radius: 8px !important;
 }
 :deep(.el-input__inner) {
-  color: #faf9f5 !important;
+  color: #333 !important;
 }
 </style>

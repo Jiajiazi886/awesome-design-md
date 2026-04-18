@@ -67,23 +67,24 @@ const onFileChange = async (e: Event) => {
 </script>
 
 <template>
-  <div class="p-8 h-full flex flex-col text-[#faf9f5]">
+  <div class="p-8 h-full flex flex-col text-gray-900">
     <div class="flex justify-between items-center mb-6">
-      <h1 class="text-3xl font-bold">帮众管理</h1>
+      <h1 class="text-3xl font-bold tracking-tight">帮众管理</h1>
       <div class="flex gap-4">
         <input type="file" ref="fileInput" class="hidden" accept=".csv" @change="onFileChange" />
-        <el-button type="primary" color="#d97757" @click="triggerImport">导入 CSV</el-button>
-        <el-button type="danger" @click="batchDelete" :disabled="selectedMembers.length === 0">批量删除</el-button>
-        <el-button type="primary" color="#6a9bcc" @click="openAddDialog">新增成员</el-button>
+        <el-button @click="triggerImport">导入 CSV</el-button>
+        <el-button type="danger" plain @click="batchDelete" :disabled="selectedMembers.length === 0">批量删除</el-button>
+        <el-button type="primary" @click="openAddDialog">新增成员</el-button>
       </div>
     </div>
 
-    <div class="flex-1 overflow-hidden bg-[#1c1c1a] p-4 rounded-lg shadow-lg border border-[#2a2a28]">
+    <div class="flex-1 overflow-hidden bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
       <el-table
         :data="store.members"
-        style="width: 100%; height: 100%; background: transparent;"
+        style="width: 100%; height: 100%;"
         v-loading="store.loading"
         @selection-change="handleSelectionChange"
+        :header-cell-style="{ background: '#f9fafb', color: '#374151', fontWeight: '600' }"
       >
         <el-table-column type="selection" width="55" />
         <el-table-column prop="job" label="职业" width="120" />
@@ -116,26 +117,9 @@ const onFileChange = async (e: Event) => {
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="dialogVisible = false">取消</el-button>
-          <el-button type="primary" color="#d97757" @click="saveMember">保存</el-button>
+          <el-button type="primary" @click="saveMember">保存</el-button>
         </span>
       </template>
     </el-dialog>
   </div>
 </template>
-
-<style scoped>
-:deep(.el-table),
-:deep(.el-table__expanded-cell) {
-  background-color: transparent !important;
-  color: #a3a3a1 !important;
-}
-:deep(.el-table th),
-:deep(.el-table tr) {
-  background-color: transparent !important;
-  color: #faf9f5 !important;
-}
-:deep(.el-table td.el-table__cell),
-:deep(.el-table th.el-table__cell.is-leaf) {
-  border-bottom: 1px solid #2a2a28;
-}
-</style>
