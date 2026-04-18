@@ -1,0 +1,5 @@
+- [x] 已成功阅读并理解当前仓库 (`awesome-design-md`) 的核心概念和目录结构。
+- [x] 已成功加载并理解 `brand-guidelines`（Anthropic 品牌颜色与排版）。
+- [x] 已成功加载并理解 `frontend-design`（高质量前端设计原则）。
+- [x] 已成功加载并理解 `test-driven-development`（无失败测试不写生产代码）。
+- [x] 已成功获取并理解 `web-design-guidelines`（Vercel Web 界面规范）。
