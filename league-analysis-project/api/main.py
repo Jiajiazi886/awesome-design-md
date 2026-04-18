@@ -61,40 +61,39 @@ def create_member(member: schemas.MemberCreate, db: Session = Depends(get_db)):
 async def import_members(file: UploadFile = File(...), db: Session = Depends(get_db)):
     content = await file.read()
     try:
-        # Expected CSV columns: 职业, ID, 副职, 备注, 出勤次数
-        df = pd.read_csv(io.StringIO(content.decode("utf-8")))
+        # Expected CSV might have headers starting at line 2, so we need to handle that
+        # Try reading normally first
+        lines = content.decode("utf-8").splitlines()
+        # Find the header row (contains "玩家名字")
+        header_idx = 0
+        for i, line in enumerate(lines):
+            if "玩家名字" in line:
+                header_idx = i
+                break
+                
+        # Join lines from header onwards
+        valid_csv = "\n".join(lines[header_idx:])
+        df = pd.read_csv(io.StringIO(valid_csv))
         
-        # map to DB fields
-        mapping = {
-            "职业": "job",
-            "ID": "game_id",
-            "副职": "sub_job",
-            "备注": "remark",
-            "出勤次数": "attendance"
-        }
-        
+        # map to DB fields based on new CSV format
         imported_count = 0
         for _, row in df.iterrows():
-            game_id = str(row.get("ID", ""))
-            if not game_id:
+            game_id = str(row.get("玩家名字", ""))
+            if not game_id or game_id == "nan" or game_id == "nil":
                 continue
                 
             db_member = db.query(models.Member).filter(models.Member.game_id == game_id).first()
             if db_member:
                 db_member.job = str(row.get("职业", db_member.job))
-                db_member.sub_job = str(row.get("副职", "")) if pd.notna(row.get("副职")) else None
-                db_member.remark = str(row.get("备注", "")) if pd.notna(row.get("备注")) else None
-                try:
-                    db_member.attendance = int(row.get("出勤次数", db_member.attendance))
-                except:
-                    pass
+                # New CSV might not have sub_job, remark, attendance explicitly named as before
+                # We'll just update what we have
             else:
                 db_member = models.Member(
-                    job=str(row.get("职业", "")),
+                    job=str(row.get("职业", "未知")),
                     game_id=game_id,
-                    sub_job=str(row.get("副职", "")) if pd.notna(row.get("副职")) else None,
-                    remark=str(row.get("备注", "")) if pd.notna(row.get("备注")) else None,
-                    attendance=int(row.get("出勤次数", 0)) if pd.notna(row.get("出勤次数")) else 0
+                    sub_job=None,
+                    remark=None,
+                    attendance=1 # Default to 1 on import
                 )
                 db.add(db_member)
             imported_count += 1
