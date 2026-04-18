@@ -27,25 +27,22 @@ watch(() => teamStore.teams, () => {
 }, { deep: true })
 
 const initSortable = () => {
-  if (pendingArea.value) {
-    Sortable.create(pendingArea.value, {
-      group: { name: 'shared', pull: 'clone', put: false },
-      animation: 150,
-      sort: false,
-    })
-  }
+  // 左侧待选区拖拽配置
+  // 我们不再使用 SortableJS 来管理左侧待选区，因为原生 HTML5 Drag&Drop 更容易控制 Vue 渲染
+  // 只在右侧容器使用 SortableJS 来提供漂亮的排序和占位符效果
   
   const squadElements = document.querySelectorAll('.squad-container')
   squadElements.forEach((el) => {
     Sortable.create(el as HTMLElement, {
-      group: 'shared',
+      group: { name: 'shared', put: true },
       animation: 150,
+      // 禁用 Sortable 的内部 DOM 操作，完全交由 Vue 数据驱动
       onAdd: (evt) => {
-        // Handle logic via Vue state if needed or let DOM sync
-        // For deep Vue sync, we usually map Sortable events to array mutations.
-        // Simplified approach: Re-read DOM structure and map to state.
+        evt.item.remove() // 移除 Sortable 插入的 DOM 元素，防止出现“两个人”
       },
-      onEnd: () => syncStateFromDOM()
+      onEnd: (evt) => {
+        // 处理同一小队内排序（如果需要的话，目前由于是重型 Vue 渲染，先仅保持原生拖放支持）
+      }
     })
   })
 }
@@ -98,12 +95,54 @@ const removeMemberFromSquad = (teamIdx: number, squadIdx: number, memberIdx: num
   teamStore.teams[teamIdx].squads[squadIdx].members.splice(memberIdx, 1)
 }
 
+// 按职业分组的待选人员
+const groupedAvailableMembers = computed(() => {
+  const groups: Record<string, any[]> = {}
+  availableMembers.value.forEach(member => {
+    const job = member.job || '未知'
+    if (!groups[job]) {
+      groups[job] = []
+    }
+    groups[job].push(member)
+  })
+  
+  // 转换为数组并排序（比如按人数从多到少）
+  return Object.entries(groups).map(([job, members]) => ({
+    job,
+    members
+  })).sort((a, b) => b.members.length - a.members.length)
+})
+
 // 记录所有请假人员的 ID
 const leaveMembers = ref<Set<string>>(new Set())
 
 const markLeave = (member: any) => {
   leaveMembers.value.add(member.game_id)
 }
+const getScheduledMemberIds = () => {
+  const scheduled = new Set<string>()
+  teamStore.teams.forEach(team => {
+    team.squads.forEach(squad => {
+      squad.members.forEach(m => {
+        if (!m.is_sub && !m.is_leave) { // 虚拟空位不计入
+          scheduled.add(m.game_id)
+        }
+      })
+    })
+  })
+  return scheduled
+}
+
+// 可排表的待选人员（过滤掉已请假、已排表的人员）
+import { computed } from 'vue'
+
+const availableMembers = computed(() => {
+  const scheduledIds = getScheduledMemberIds()
+  return memberStore.members.filter(m => 
+    !leaveMembers.value.has(m.game_id) && 
+    !scheduledIds.has(m.game_id)
+  )
+})
 
 const cancelLeave = (game_id: string) => {
   leaveMembers.value.delete(game_id)
@@ -217,47 +256,71 @@ const clearLayout = () => {
   <div class="h-full flex text-gray-800 bg-gray-50">
     <!-- 左侧待选区 -->
     <div 
-      class="w-64 bg-white border-r border-gray-200 p-4 flex flex-col"
+      class="w-72 bg-white border-r border-gray-200 p-4 flex flex-col shadow-sm z-10"
       @dragover.prevent
       @drop="onDropRemove"
     >
-      <h2 class="text-xl font-bold mb-4 text-blue-600">待选区</h2>
-      <div class="text-xs text-gray-500 mb-2">拖拽回此处以移出队伍</div>
-      <div class="flex-1 overflow-y-auto space-y-2 pr-2" ref="pendingArea">
-        <template v-for="member in memberStore.members" :key="member.game_id">
-          <el-tooltip 
-            v-if="!leaveMembers.has(member.game_id)"
-            placement="right"
-            effect="dark"
+      <h2 class="text-xl font-bold mb-4 text-gray-900 tracking-tight">待选区</h2>
+      <div class="text-xs text-gray-500 mb-4 bg-gray-50 p-2 rounded-lg border border-gray-100">
+        将小队中的成员拖回此处即可移出队伍
+      </div>
+      
+      <div class="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+        <el-collapse class="border-none" accordion>
+          <el-collapse-item 
+            v-for="group in groupedAvailableMembers" 
+            :key="group.job"
+            :name="group.job"
           >
-            <template #content>
-              <div>职业: {{ member.job }}</div>
-              <div>副职: {{ member.sub_job || '无' }}</div>
-              <div>出勤: {{ member.attendance }}次</div>
-              <div class="text-orange-500">近期伤害数据: (暂无数据)</div>
-            </template>
-            <div 
-              class="group p-2 rounded-lg cursor-move hover:opacity-80 transition border border-gray-200 shadow-sm hover:border-blue-400 flex justify-between items-center"
-              :style="{ backgroundColor: settingsStore.getJobColor(member.job) }"
-              draggable="true"
-              @dragstart="onDragStart(member, { type: 'pending' })"
-            >
-              <div>
-                <div class="font-bold text-gray-800">{{ member.game_id }}</div>
-                <div class="text-xs text-gray-500">{{ member.job }}</div>
+            <template #title>
+              <div class="flex items-center gap-2 w-full pr-4">
+                <div class="w-3 h-3 rounded-full" :style="{ backgroundColor: settingsStore.getJobColor(group.job) }"></div>
+                <span class="font-bold text-gray-800">{{ group.job }}</span>
+                <span class="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full ml-auto">{{ group.members.length }}人待分配</span>
               </div>
-              <el-button 
-                size="small" 
-                type="warning" 
-                link
-                class="opacity-0 group-hover:opacity-100 transition-opacity"
-                @click="markLeave(member)"
-              >
-                请假
-              </el-button>
+            </template>
+            
+            <div class="space-y-2 mt-2 pb-2">
+              <template v-for="member in group.members" :key="member.game_id">
+                <el-tooltip 
+                  placement="right"
+                  effect="dark"
+                >
+                  <template #content>
+                    <div>职业: {{ member.job }}</div>
+                    <div>副职: {{ member.sub_job || '无' }}</div>
+                    <div>出勤: {{ member.attendance }}次</div>
+                    <div class="text-orange-400 mt-1 pt-1 border-t border-gray-600">近期伤害数据: (暂无数据)</div>
+                  </template>
+                  <div 
+                    class="group p-2 rounded-lg cursor-move hover:-translate-y-[1px] transition-all border border-gray-200 shadow-sm hover:shadow-md flex justify-between items-center"
+                    :style="{ backgroundColor: settingsStore.getJobColor(member.job) }"
+                    draggable="true"
+                    @dragstart="onDragStart(member, { type: 'pending' })"
+                  >
+                    <div>
+                      <div class="font-bold text-gray-800">{{ member.game_id }}</div>
+                      <div class="text-xs text-gray-600 opacity-80">{{ member.job }}</div>
+                    </div>
+                    <el-button 
+                      size="small" 
+                      type="warning" 
+                      link
+                      class="opacity-0 group-hover:opacity-100 transition-opacity"
+                      @click.stop="markLeave(member)"
+                    >
+                      请假
+                    </el-button>
+                  </div>
+                </el-tooltip>
+              </template>
             </div>
-          </el-tooltip>
-        </template>
+          </el-collapse-item>
+        </el-collapse>
+        
+        <div v-if="groupedAvailableMembers.length === 0" class="text-center py-8 text-gray-400 text-sm">
+          所有人员已分配完毕或已请假
+        </div>
       </div>
     </div>
 
