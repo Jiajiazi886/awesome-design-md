@@ -2,7 +2,6 @@
 import { ref, onMounted, nextTick, watch } from 'vue'
 import { useMemberStore } from '../stores/memberStore'
 import { useTeamStore, type Team, type Squad, type TeamMember } from '../stores/teamStore'
-import Sortable from 'sortablejs'
 import html2canvas from 'html2canvas'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
@@ -19,44 +18,7 @@ onMounted(async () => {
   if (memberStore.members.length === 0) {
     await memberStore.fetchMembers()
   }
-  initSortable()
 })
-
-watch(() => teamStore.teams, () => {
-  nextTick(() => initSortable())
-}, { deep: true })
-
-const initSortable = () => {
-  // 左侧待选区拖拽配置
-  // 我们不再使用 SortableJS 来管理左侧待选区，因为原生 HTML5 Drag&Drop 更容易控制 Vue 渲染
-  // 只在右侧容器使用 SortableJS 来提供漂亮的排序和占位符效果
-  
-  const squadElements = document.querySelectorAll('.squad-container')
-  squadElements.forEach((el) => {
-    Sortable.create(el as HTMLElement, {
-      group: { name: 'shared', put: true },
-      animation: 150,
-      // 禁用 Sortable 的内部 DOM 操作，完全交由 Vue 数据驱动
-      onAdd: (evt) => {
-        evt.item.remove() // 移除 Sortable 插入的 DOM 元素，防止出现“两个人”
-      },
-      onEnd: (evt) => {
-        // 处理同一小队内排序（如果需要的话，目前由于是重型 Vue 渲染，先仅保持原生拖放支持）
-      }
-    })
-  })
-}
-
-// Due to Vue + Sortable complexities, it's often easier to let Sortable mutate DOM
-// and we read back the `data-id` into our state, OR we use vuedraggable.
-// Since SortableJS is requested without a specific vue wrapper, we'll implement a robust sync.
-
-const syncStateFromDOM = () => {
-  // A bit hacky but works for generic Sortable without wrapper
-  // We'll update teamStore.teams based on DOM data-attributes
-  // Or better, use vue-draggable-plus if possible. 
-  // Wait, let's just use methods instead of pure Sortable DOM mapping to avoid Vue reactivity issues.
-}
 
 const addTeam = () => {
   teamStore.teams.push({

@@ -28,6 +28,9 @@ export default defineConfig({
     },
   },
   server: {
+    watch: {
+      ignored: ['**/venv/**']
+    },
     proxy: {
       '/api': {
         target: 'http://localhost:8000',
