@@ -94,13 +94,19 @@ const addVirtualSub = (teamIndex: number, squadIndex: number) => {
   })
 }
 
-const addVirtualLeave = (teamIndex: number, squadIndex: number) => {
-  teamStore.teams[teamIndex].squads[squadIndex].members.push({
-    id: 'v_leave_' + Date.now(),
-    game_id: '请假空位',
-    job: '请假',
-    is_leave: true
-  })
+const removeMemberFromSquad = (teamIdx: number, squadIdx: number, memberIdx: number) => {
+  teamStore.teams[teamIdx].squads[squadIdx].members.splice(memberIdx, 1)
+}
+
+// 记录所有请假人员的 ID
+const leaveMembers = ref<Set<string>>(new Set())
+
+const markLeave = (member: any) => {
+  leaveMembers.value.add(member.game_id)
+}
+
+const cancelLeave = (game_id: string) => {
+  leaveMembers.value.delete(game_id)
 }
 
 // Drag & Drop Handlers (Native HTML5 API is easier to integrate with Vue array state than raw SortableJS)
@@ -187,28 +193,40 @@ const clearLayout = () => {
       <h2 class="text-xl font-bold mb-4 text-blue-600">待选区</h2>
       <div class="text-xs text-gray-500 mb-2">拖拽回此处以移出队伍</div>
       <div class="flex-1 overflow-y-auto space-y-2 pr-2" ref="pendingArea">
-        <el-tooltip 
-          v-for="member in memberStore.members" 
-          :key="member.game_id"
-          placement="right"
-          effect="dark"
-        >
-          <template #content>
-            <div>职业: {{ member.job }}</div>
-            <div>副职: {{ member.sub_job || '无' }}</div>
-            <div>出勤: {{ member.attendance }}次</div>
-            <div class="text-orange-500">近期伤害数据: (暂无数据)</div>
-          </template>
-          <div 
-            class="p-2 rounded-lg cursor-move hover:opacity-80 transition border border-gray-200 shadow-sm hover:border-blue-400"
-            :style="{ backgroundColor: settingsStore.getJobColor(member.job) }"
-            draggable="true"
-            @dragstart="onDragStart(member, { type: 'pending' })"
+        <template v-for="member in memberStore.members" :key="member.game_id">
+          <el-tooltip 
+            v-if="!leaveMembers.has(member.game_id)"
+            placement="right"
+            effect="dark"
           >
-            <div class="font-bold text-gray-800">{{ member.game_id }}</div>
-            <div class="text-xs text-gray-500">{{ member.job }}</div>
-          </div>
-        </el-tooltip>
+            <template #content>
+              <div>职业: {{ member.job }}</div>
+              <div>副职: {{ member.sub_job || '无' }}</div>
+              <div>出勤: {{ member.attendance }}次</div>
+              <div class="text-orange-500">近期伤害数据: (暂无数据)</div>
+            </template>
+            <div 
+              class="group p-2 rounded-lg cursor-move hover:opacity-80 transition border border-gray-200 shadow-sm hover:border-blue-400 flex justify-between items-center"
+              :style="{ backgroundColor: settingsStore.getJobColor(member.job) }"
+              draggable="true"
+              @dragstart="onDragStart(member, { type: 'pending' })"
+            >
+              <div>
+                <div class="font-bold text-gray-800">{{ member.game_id }}</div>
+                <div class="text-xs text-gray-500">{{ member.job }}</div>
+              </div>
+              <el-button 
+                size="small" 
+                type="warning" 
+                link
+                class="opacity-0 group-hover:opacity-100 transition-opacity"
+                @click="markLeave(member)"
+              >
+                请假
+              </el-button>
+            </div>
+          </el-tooltip>
+        </template>
       </div>
     </div>
 
@@ -224,7 +242,34 @@ const clearLayout = () => {
         </div>
       </div>
 
-      <div class="flex-1 overflow-auto p-6" ref="captureArea">
+      <div class="flex-1 overflow-auto p-6 bg-gray-50" ref="captureArea">
+        <!-- 头部摘要区（导出图片时可见） -->
+        <div class="mb-6 bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h2 class="text-xl font-bold text-gray-800">联赛阵型排布表</h2>
+            <div class="text-sm text-gray-500 mt-1">
+              总团队数: {{ teamStore.teams.length }} | 
+              总排表人数: {{ teamStore.teams.reduce((acc, t) => acc + t.squads.reduce((sAcc, s) => sAcc + s.members.length, 0), 0) }}
+            </div>
+          </div>
+          
+          <div class="bg-orange-50 border border-orange-100 p-3 rounded-lg flex-1 md:max-w-md">
+            <div class="font-medium text-orange-800 text-sm mb-1">请假人员 ({{ leaveMembers.size }}人)</div>
+            <div class="text-xs text-orange-600 flex flex-wrap gap-2">
+              <span v-if="leaveMembers.size === 0" class="text-gray-400">暂无请假人员</span>
+              <span 
+                v-for="leaveId in Array.from(leaveMembers)" 
+                :key="leaveId"
+                class="bg-orange-100 px-2 py-0.5 rounded-full cursor-pointer hover:bg-orange-200 transition"
+                @click="cancelLeave(leaveId)"
+                title="点击取消请假"
+              >
+                {{ leaveId }} &times;
+              </span>
+            </div>
+          </div>
+        </div>
+
         <div v-for="(team, tIdx) in teamStore.teams" :key="team.id" class="mb-8 bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
           <div class="flex justify-between items-center mb-4">
             <input v-model="team.name" class="bg-transparent text-2xl font-bold text-orange-600 outline-none border-b border-transparent focus:border-orange-600" />
@@ -246,9 +291,8 @@ const clearLayout = () => {
               <div class="flex justify-between items-center mb-2 border-b border-gray-200 pb-2">
                 <input v-model="squad.name" class="bg-transparent font-bold text-sm outline-none text-gray-800" />
                 <div class="flex gap-1">
-                  <el-button size="small" link type="success" @click="addVirtualSub(tIdx, sIdx)">+替补</el-button>
-                  <el-button size="small" link type="warning" @click="addVirtualLeave(tIdx, sIdx)">+请假</el-button>
-                  <el-button size="small" link type="danger" @click="removeSquad(tIdx, sIdx)">删除</el-button>
+                  <el-button size="small" link type="success" @click="addVirtualSub(tIdx, sIdx)">+替补空位</el-button>
+                  <el-button size="small" link type="danger" @click="removeSquad(tIdx, sIdx)">删除小队</el-button>
                 </div>
               </div>
               <div class="space-y-2 squad-container min-h-[150px] transition-all">
@@ -257,14 +301,25 @@ const clearLayout = () => {
                   :key="member.id"
                   draggable="true"
                   @dragstart="onDragStart(member, { type: 'squad', teamIdx: tIdx, squadIdx: sIdx, memberIdx: mIdx })"
-                  class="p-2 rounded-lg border border-gray-200 shadow-sm cursor-move text-sm flex justify-between items-center hover:opacity-80 hover:border-blue-400 transition"
+                  class="group p-2 rounded-lg border border-gray-200 shadow-sm cursor-move text-sm flex justify-between items-center hover:opacity-80 hover:border-blue-400 transition"
                   :style="{ backgroundColor: settingsStore.getJobColor(member.job) }"
                   :class="{'opacity-50 line-through': member.is_leave}"
                 >
-                  <div>
-                    <span class="font-bold text-gray-800">{{ member.game_id }}</span>
-                    <span class="text-xs text-gray-500 ml-2">{{ member.job }}</span>
+                  <div class="flex items-center gap-2">
+                    <div>
+                      <span class="font-bold text-gray-800">{{ member.game_id }}</span>
+                      <span class="text-xs text-gray-500 ml-2">{{ member.job }}</span>
+                    </div>
                   </div>
+                  <el-button 
+                    size="small" 
+                    link 
+                    type="danger" 
+                    class="opacity-0 group-hover:opacity-100 transition-opacity"
+                    @click="removeMemberFromSquad(tIdx, sIdx, mIdx)"
+                  >
+                    移出
+                  </el-button>
                 </div>
                 <div v-if="squad.members.length === 0" class="text-center text-gray-400 text-sm mt-4">
                   拖拽至此处 (0/6)
