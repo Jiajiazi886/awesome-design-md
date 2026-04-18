@@ -45,11 +45,11 @@ export const useMemberStore = defineStore('member', () => {
     }
   }
 
-  const importMembers = async (file: File) => {
+  const importMembers = async (file: File, side: string = 'ally') => {
     const formData = new FormData()
     formData.append('file', file)
     try {
-      const res = await axios.post('/api/members/import', formData, {
+      const res = await axios.post(`/api/members/import?side=${side}`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       })
       await fetchMembers()

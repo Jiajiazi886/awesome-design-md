@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { useMemberStore } from '../stores/memberStore'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { ArrowDown } from '@element-plus/icons-vue'
 
 const store = useMemberStore()
 const search = ref('')
@@ -47,7 +48,10 @@ const batchDelete = async () => {
 }
 
 const fileInput = ref<HTMLInputElement | null>(null)
-const triggerImport = () => {
+const importSide = ref('ally')
+
+const triggerImport = (side: string) => {
+  importSide.value = side
   fileInput.value?.click()
 }
 
@@ -56,8 +60,8 @@ const onFileChange = async (e: Event) => {
   if (target.files && target.files.length > 0) {
     const file = target.files[0]
     try {
-      const res = await store.importMembers(file)
-      ElMessage.success(`成功导入 ${res.imported} 条记录`)
+      const res = await store.importMembers(file, importSide.value)
+      ElMessage.success(`成功导入 ${res.imported} 条${importSide.value === 'ally' ? '我方' : '敌方'}记录`)
     } catch (err) {
       ElMessage.error('导入失败')
     }
@@ -67,14 +71,24 @@ const onFileChange = async (e: Event) => {
 </script>
 
 <template>
-  <div class="p-8 h-full flex flex-col text-gray-900">
+  <div class="p-8 h-full flex flex-col bg-[#f5f5f7]">
     <div class="flex justify-between items-center mb-6">
-      <h1 class="text-3xl font-bold tracking-tight">帮众管理</h1>
+      <h1 class="text-3xl font-semibold text-gray-900 tracking-tight">帮众管理</h1>
       <div class="flex gap-4">
         <input type="file" ref="fileInput" class="hidden" accept=".csv" @change="onFileChange" />
-        <el-button @click="triggerImport">导入 CSV</el-button>
+        <el-dropdown @command="triggerImport">
+          <el-button type="primary">
+            导入 CSV<el-icon class="el-icon--right"><arrow-down /></el-icon>
+          </el-button>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item command="ally">导入我方人员</el-dropdown-item>
+              <el-dropdown-item command="enemy">导入敌方人员</el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
         <el-button type="danger" plain @click="batchDelete" :disabled="selectedMembers.length === 0">批量删除</el-button>
-        <el-button type="primary" @click="openAddDialog">新增成员</el-button>
+        <el-button type="primary" plain @click="openAddDialog">新增成员</el-button>
       </div>
     </div>
 

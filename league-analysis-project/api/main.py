@@ -58,15 +58,14 @@ def create_member(member: schemas.MemberCreate, db: Session = Depends(get_db)):
     return db_member
 
 @app.post("/api/members/import")
-async def import_members(file: UploadFile = File(...), db: Session = Depends(get_db)):
+async def import_members(side: str = "ally", file: UploadFile = File(...), db: Session = Depends(get_db)):
     content = await file.read()
     try:
-        # Expected CSV might have multiple sections, empty lines, and repeated headers
         lines = content.decode("utf-8").splitlines()
         
-        # We'll parse it manually since it's a messy CSV format
         imported_count = 0
         header = None
+        current_section = 0  # 1 for first section (ally), 2 for second section (enemy)
         
         import csv
         reader = csv.reader(lines)
@@ -75,8 +74,10 @@ async def import_members(file: UploadFile = File(...), db: Session = Depends(get
             if not row or len(row) < 2:
                 continue
                 
-            # Skip the 'nil' rows
-            if row[0] == "nil" or "nil" in row:
+            # If we hit a row where the first element is "nil" (or potentially a guild name)
+            # and it has only a few columns, it marks the start of a new section
+            if len(row) <= 2 or "nil" in row[0]:
+                current_section += 1
                 continue
                 
             # Detect header row
@@ -87,12 +88,16 @@ async def import_members(file: UploadFile = File(...), db: Session = Depends(get
             if not header:
                 continue
                 
-            # Create a dictionary from the current row using the header
-            # Zip will safely truncate if row length doesn't match header length perfectly
+            # Skip if we are not in the requested section
+            if side == "ally" and current_section != 1:
+                continue
+            if side == "enemy" and current_section != 2:
+                continue
+                
             row_dict = dict(zip(header, row))
             
             game_id = str(row_dict.get("玩家名字", "")).strip()
-            if not game_id or game_id == "nan":
+            if not game_id or game_id == "nan" or game_id == "nil":
                 continue
                 
             db_member = db.query(models.Member).filter(models.Member.game_id == game_id).first()
@@ -104,7 +109,7 @@ async def import_members(file: UploadFile = File(...), db: Session = Depends(get
                     game_id=game_id,
                     sub_job=None,
                     remark=None,
-                    attendance=1 # Default to 1 on import
+                    attendance=1
                 )
                 db.add(db_member)
             imported_count += 1
