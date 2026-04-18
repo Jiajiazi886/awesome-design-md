@@ -61,35 +61,46 @@ def create_member(member: schemas.MemberCreate, db: Session = Depends(get_db)):
 async def import_members(file: UploadFile = File(...), db: Session = Depends(get_db)):
     content = await file.read()
     try:
-        # Expected CSV might have headers starting at line 2, so we need to handle that
-        # Try reading normally first
+        # Expected CSV might have multiple sections, empty lines, and repeated headers
         lines = content.decode("utf-8").splitlines()
-        # Find the header row (contains "玩家名字")
-        header_idx = 0
-        for i, line in enumerate(lines):
-            if "玩家名字" in line:
-                header_idx = i
-                break
-                
-        # Join lines from header onwards
-        valid_csv = "\n".join(lines[header_idx:])
-        df = pd.read_csv(io.StringIO(valid_csv))
         
-        # map to DB fields based on new CSV format
+        # We'll parse it manually since it's a messy CSV format
         imported_count = 0
-        for _, row in df.iterrows():
-            game_id = str(row.get("玩家名字", ""))
-            if not game_id or game_id == "nan" or game_id == "nil":
+        header = None
+        
+        import csv
+        reader = csv.reader(lines)
+        
+        for row in reader:
+            if not row or len(row) < 2:
+                continue
+                
+            # Skip the 'nil' rows
+            if row[0] == "nil" or "nil" in row:
+                continue
+                
+            # Detect header row
+            if "玩家名字" in row:
+                header = row
+                continue
+                
+            if not header:
+                continue
+                
+            # Create a dictionary from the current row using the header
+            # Zip will safely truncate if row length doesn't match header length perfectly
+            row_dict = dict(zip(header, row))
+            
+            game_id = str(row_dict.get("玩家名字", "")).strip()
+            if not game_id or game_id == "nan":
                 continue
                 
             db_member = db.query(models.Member).filter(models.Member.game_id == game_id).first()
             if db_member:
-                db_member.job = str(row.get("职业", db_member.job))
-                # New CSV might not have sub_job, remark, attendance explicitly named as before
-                # We'll just update what we have
+                db_member.job = str(row_dict.get("职业", db_member.job)).strip()
             else:
                 db_member = models.Member(
-                    job=str(row.get("职业", "未知")),
+                    job=str(row_dict.get("职业", "未知")).strip(),
                     game_id=game_id,
                     sub_job=None,
                     remark=None,
