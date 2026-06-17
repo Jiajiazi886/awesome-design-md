@@ -1,0 +1,95 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Apple-style bright theme CSS variables */
+  --apple-bg: #f5f5f7;
+  --apple-card: #ffffff;
+  --apple-text-main: #1d1d1f;
+  --apple-text-gray: #86868b;
+  --apple-accent: #0071e3;
+  --apple-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  
+  /* Font Family Update */
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  /* Overriding Element Plus Variables */
+  --el-color-primary: var(--apple-accent);
+  --el-bg-color-page: var(--apple-bg);
+  --el-bg-color: var(--apple-card);
+  --el-bg-color-overlay: var(--apple-card);
+  --el-text-color-primary: var(--apple-text-main);
+  --el-text-color-regular: var(--apple-text-gray);
+  --el-border-color: transparent;
+  --el-border-color-light: transparent;
+  --el-border-color-lighter: transparent;
+  --el-border-radius-base: 12px;
+  --el-border-radius-small: 8px;
+  --el-border-radius-round: 24px;
+  --el-box-shadow: var(--apple-shadow);
+  --el-box-shadow-light: var(--apple-shadow);
+  --el-fill-color-blank: rgba(0, 0, 0, 0.04);
+}
+
+body {
+  margin: 0;
+  background-color: var(--apple-bg);
+  color: var(--apple-text-main);
+}
+
+/* Element Plus Specific Overrides for modern, borderless, rounded, and smooth focus */
+.el-card {
+  border: none !important;
+  border-radius: 20px !important;
+  box-shadow: var(--apple-shadow) !important;
+  background-color: var(--apple-card) !important;
+  overflow: hidden;
+}
+
+.el-input__wrapper, .el-textarea__inner {
+  border-radius: 12px !important;
+  box-shadow: none !important;
+  background-color: rgba(0, 0, 0, 0.04) !important;
+  transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+}
+
+.el-input__wrapper.is-focus, .el-textarea__inner:focus {
+  background-color: #fff !important;
+  box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.3) !important;
+}
+
+.el-button {
+  border-radius: 10px !important;
+  border: none !important;
+  font-weight: 500 !important;
+  transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+}
+
+.el-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.el-button:active {
+  transform: translateY(1px);
+}
+
+.el-button:focus-visible {
+  outline: none !important;
+  box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.3) !important;
+}
+
+/* Ensure no dark mode media queries */
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Keep bright theme variables forced if dark mode exists previously or by default */
+  }
+}
